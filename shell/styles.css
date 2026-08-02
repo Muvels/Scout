@@ -1,0 +1,128 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", ui-sans-serif,
+    "Segoe UI", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-tab-active: var(--tab-active);
+  --color-content-empty: var(--content-empty);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+}
+
+:root {
+  --background: oklch(0.97 0.004 260);
+  --foreground: oklch(0.26 0.025 260);
+  --muted-foreground: oklch(0.55 0.025 260);
+  --border: oklch(0.9 0.01 260);
+  --popover: oklch(0.985 0.002 260 / 0.97);
+  --popover-foreground: oklch(0.25 0.025 260);
+
+  /* The window chrome paints at slightly under full opacity so the desktop
+     shimmers through — the window itself is transparent. Derived in CSS so
+     it tracks every space color change automatically. */
+  --chrome: color-mix(in srgb, var(--sidebar) 68%, transparent);
+
+  /* An Arc-style luminosity ramp layered over the chrome wash: light falls
+     in from the top-left and the bottom-right deepens. Pure translucent
+     white/black stops, so it flatters every space color. Gradient spaces
+     stack their two color stops UNDER this ramp via --chrome-gradient,
+     which useSpaces() overrides per space; the ramp itself is shared. */
+  --chrome-ramp: linear-gradient(
+    160deg,
+    color-mix(in srgb, white 26%, transparent) 0%,
+    color-mix(in srgb, white 8%, transparent) 34%,
+    transparent 55%,
+    color-mix(in srgb, black 14%, transparent) 100%
+  );
+  --chrome-gradient: var(--chrome-ramp);
+
+  /* Space palette defaults for the first paint; useSpaces() overwrites all
+     of these on the document root from the active space's color. */
+  --sidebar: #6f7f95;
+  --sidebar-foreground: #f3f6fa;
+  --surface: color-mix(in srgb, white 16%, transparent);
+  --surface-hover: color-mix(in srgb, white 24%, transparent);
+  --tab-active: color-mix(in srgb, white 42%, transparent);
+  --content-empty: #f2f3f4;
+  --accent: #95a1b3;
+  --accent-foreground: white;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 640px;
+  height: 100%;
+  min-height: 400px;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  color: var(--foreground);
+  /* The window is transparent; the shell paints its own rounded silhouette
+     and macOS derives the window shadow from those painted pixels. */
+  background: transparent;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button,
+input {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+tbf-tab-view,
+tbf-shell-overlay,
+tbf-traffic-lights {
+  display: block;
+}
+
+::selection {
+  color: inherit;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+[cmdk-list] {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(15 23 42 / 18%) transparent;
+}
+
+.scout-scroll-area {
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scout-scroll-area::-webkit-scrollbar {
+  display: none;
+}

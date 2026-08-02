@@ -1,0 +1,37 @@
+# Scout Source License
+
+Copyright 2026 Scout contributors
+
+Required Notice: Copyright 2026 Scout contributors
+
+Except for the third-party material identified below, each Scout contributor
+licenses the portions of Scout for which that contributor holds copyright under
+the recipient's choice of either:
+
+1. the PolyForm Noncommercial License 1.0.0, in
+   `LICENSES/PolyForm-Noncommercial-1.0.0.md`; or
+2. the PolyForm Internal Use License 1.0.0, in
+   `LICENSES/PolyForm-Internal-Use-1.0.0.md`.
+
+You may rely on either license for a particular use. The license texts are
+unmodified copies of the standard PolyForm terms.
+
+The PolyForm Noncommercial License permits noncommercial use, modification,
+and distribution. The PolyForm Internal Use License permits internal business
+use and modification, but not distribution. Neither license permits commercial
+distribution of Scout.
+
+This source license covers only Scout-authored material in this repository. It
+does not apply to TBF, Chromium, ungoogled-chromium, uBlock Origin, npm
+packages, or other third-party material. Those components remain under their
+own licenses; see `THIRD_PARTY_NOTICES.md`.
+
+Official, signed Scout release artifacts are governed additionally by
+`OFFICIAL_BUILDS.md`. No license to Scout names, logos, icons, signatures, or
+other project marks is granted except for the descriptive uses allowed by
+`TRADEMARKS.md`.
+
+Commercial licenses are not currently offered. A future legal entity may
+publish separate commercial terms after it obtains the necessary rights,
+without changing the licenses already granted for versions received under
+these terms.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Scout Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Settings</h1>
+        <p class="subtitle">
+          Served from <code>scout://settings</code> — an app-internal page
+          from Scout's own package.
+        </p>
+      </header>
+
+      <section aria-labelledby="general-heading">
+        <h2 id="general-heading">General</h2>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Search engine</span>
+            <span class="row-hint">Used when the address bar input is not a URL.</span>
+          </div>
+          <select id="search-engine">
+            <option value="google">Google</option>
+            <option value="duckduckgo">DuckDuckGo</option>
+            <option value="bing">Bing</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Confirm before closing pinned tabs</span>
+            <span class="row-hint">Ask before a pinned tab is closed.</span>
+          </div>
+          <input type="checkbox" id="confirm-close-pinned" checked />
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Sidebar position</span>
+            <span class="row-hint">Which side of the window the sidebar sits on.</span>
+          </div>
+          <select id="sidebar-position">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Command box: current space only</span>
+            <span class="row-hint">List only the active space's tabs instead of grouping every space.</span>
+          </div>
+          <input type="checkbox" id="palette-scope" />
+        </div>
+      </section>
+
+      <section aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">Privacy</h2>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Ad &amp; tracker blocking</span>
+            <span class="row-hint">uBlock Origin, bundled with Scout. Off fully disables it — nothing runs, nothing is filtered.</span>
+          </div>
+          <input type="checkbox" id="content-blocker" checked />
+        </div>
+      </section>
+
+      <section aria-labelledby="appearance-heading">
+        <h2 id="appearance-heading">Appearance</h2>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Noise texture</span>
+            <span class="row-hint">Overlay a subtle grain on the window chrome.</span>
+          </div>
+          <input type="checkbox" id="noise-background" />
+        </div>
+      </section>
+
+      <section aria-labelledby="about-heading">
+        <h2 id="about-heading">About</h2>
+        <div class="row">
+          <div class="row-text">
+            <span class="row-title">Scout</span>
+            <span class="row-hint">
+              The browser this framework builds with itself.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <p class="footnote" id="status"></p>
+    </main>
+    <script src="settings.js"></script>
+  </body>
+</html>

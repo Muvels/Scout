@@ -1,0 +1,13 @@
+Scout
+
+Required Notice: Copyright 2026 Scout contributors
+
+Scout-authored source is offered under the recipient's choice of the PolyForm
+Noncommercial License 1.0.0 or the PolyForm Internal Use License 1.0.0. See
+`LICENSE` and `LICENSES/`.
+
+This notice does not apply Scout's license to third-party material. Scout uses
+TBF and bundles a TBF-built Chromium runtime and uBlock Origin in release
+builds. Each of those components, and every other third-party component,
+remains under its own terms. See `THIRD_PARTY_NOTICES.md` and the notices
+shipped with a release.

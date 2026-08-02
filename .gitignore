@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Production build output
+dist/
+
+# `tbf dev` working tree. user-data/ is a full browser profile: history,
+# cookies, local storage and cached credentials for every site opened while
+# developing. Never commit it.
+.tbf-dev/
+
+# Vendored upstream uBlock Origin build (16MB), fetched by
+# scripts/fetch-ublock.mjs on npm install. Never commit it.
+extensions/ublock/
+
+# Probe and Python helper output. These were previously covered by the TBF
+# repository's root ignore rules.
+.scout-probe/
+__pycache__/
+*.pyc
+
+# Editor and OS noise
+.DS_Store
+*.log
