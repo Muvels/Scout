@@ -5,7 +5,10 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
+    "generate:version": "node scripts/generate-version.mjs",
+    "predev": "npm run generate:version",
     "dev": "tbf dev",
+    "prebuild": "npm run generate:version",
     "build": "tbf build",
     "fetch:ublock": "node scripts/fetch-ublock.mjs",
     "lint": "eslint .",

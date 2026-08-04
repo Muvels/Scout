@@ -89,6 +89,14 @@ h2 {
   color: #6b7280;
 }
 
+.app-version {
+  flex: none;
+  color: #6b7280;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 select {
   height: 30px;
   padding: 0 8px;

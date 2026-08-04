@@ -4,6 +4,10 @@ node_modules/
 # Production build output
 dist/
 
+# Generated from package.json before dev/build so the static settings page
+# always displays the packaged Scout release version.
+pages/settings/version.js
+
 # `tbf dev` working tree. user-data/ is a full browser profile: history,
 # cookies, local storage and cached credentials for every site opened while
 # developing. Never commit it.

@@ -7,9 +7,14 @@ const sidebarPosition = document.getElementById('sidebar-position');
 const paletteScope = document.getElementById('palette-scope');
 const noiseBackground = document.getElementById('noise-background');
 const contentBlocker = document.getElementById('content-blocker');
+const appVersion = document.getElementById('app-version');
 const status = document.getElementById('status');
 
 const stored = (key, fallback) => localStorage.getItem(key) ?? fallback;
+
+if (typeof globalThis.SCOUT_VERSION === 'string') {
+  appVersion.textContent = `Version ${globalThis.SCOUT_VERSION}`;
+}
 
 searchEngine.value = stored('scout.search-engine', 'google');
 confirmClosePinned.checked =
