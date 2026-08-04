@@ -16,7 +16,12 @@ export type SpacesApi = {
   spaces: Space[];
   active: Space;
   setActive: (id: string) => void;
-  create: (name: string, color: string, gradientTo?: string) => void;
+  create: (
+    name: string,
+    color: string,
+    gradientTo?: string,
+    icon?: Space['icon'],
+  ) => void;
   update: (space: Space) => void;
   remove: (id: string) => void;
 };
@@ -57,12 +62,14 @@ export function useSpaces(): SpacesApi {
     name: string,
     color: string,
     gradientTo?: string,
+    icon?: Space['icon'],
   ) => {
     const space: Space = {
       id: crypto.randomUUID(),
       name: name.trim() || 'Space',
       color,
       ...(gradientTo === undefined ? {} : { gradientTo }),
+      ...(icon === undefined ? {} : { icon }),
     };
     setState((current) => ({
       spaces: [...current.spaces, space],

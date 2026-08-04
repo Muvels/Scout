@@ -3,11 +3,17 @@ import { z } from 'zod';
 
 const searchEngineSchema = z.enum(['google', 'duckduckgo', 'bing']);
 
+const spaceIconSchema = z.object({
+  kind: z.enum(['emoji', 'symbol']),
+  value: z.string().min(1).max(32),
+});
+
 const spaceSchema = z.object({
   id: z.string(),
   name: z.string(),
   color: z.string(),
   gradientTo: z.string().optional(),
+  icon: spaceIconSchema.optional(),
 });
 
 const idListsSchema = z.record(z.array(z.string()));

@@ -38,6 +38,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from './ui/tooltip.js';
+import { SpaceIconGlyph, SpaceIconPicker } from './SpaceIconPicker.js';
 
 type EditorState =
   | { mode: 'create' }
@@ -61,7 +62,10 @@ function SwatchRow({
 }) {
   const custom = !SPACE_COLORS.includes(value as never);
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label={label}>
+    <div
+      className="flex min-w-0 max-w-full flex-wrap items-center gap-2"
+      aria-label={label}
+    >
       {SPACE_COLORS.map((swatch) => (
         <button
           key={swatch}
@@ -112,6 +116,7 @@ function SpaceEditor({
   const [name, setName] = useState(editing?.name ?? '');
   const [color, setColor] = useState(editing?.color ?? SPACE_COLORS[1]);
   const [gradientTo, setGradientTo] = useState(editing?.gradientTo);
+  const [icon, setIcon] = useState(editing?.icon);
 
   const toggleGradient = () => {
     if (gradientTo !== undefined) {
@@ -126,30 +131,38 @@ function SpaceEditor({
 
   const save = () => {
     if (editing) {
-      spaces.update({ ...editing, name, color, gradientTo });
+      spaces.update({ ...editing, name, color, gradientTo, icon });
     } else {
-      spaces.create(name, color, gradientTo);
+      spaces.create(name, color, gradientTo, icon);
     }
     close();
   };
 
   return (
-    <div className="grid gap-3">
-      <input
-        autoFocus
-        value={name}
-        placeholder="Space name..."
-        spellCheck={false}
-        className="h-9 rounded-lg bg-black/6 px-3 text-[13px] font-medium text-foreground outline-none placeholder:text-foreground/38 focus:ring-2 focus:ring-accent"
-        onChange={(event) => setName(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') save();
-        }}
-      />
+    <div className="grid w-full min-w-0 max-w-full gap-3 overflow-hidden">
+      <div className="flex min-w-0 max-w-full items-center gap-2">
+        <SpaceIconPicker
+          icon={icon}
+          color={color}
+          gradientTo={gradientTo}
+          onChange={setIcon}
+        />
+        <input
+          autoFocus
+          value={name}
+          placeholder="Space name..."
+          spellCheck={false}
+          className="h-9 w-0 min-w-0 max-w-full flex-1 rounded-lg bg-black/6 px-3 text-[13px] font-medium text-foreground outline-none placeholder:text-foreground/38 focus:ring-2 focus:ring-accent"
+          onChange={(event) => setName(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') save();
+          }}
+        />
+      </div>
 
       <SwatchRow value={color} onChange={setColor} label="Space color" />
 
-      <div className="flex items-center justify-between">
+      <div className="flex min-w-0 max-w-full items-center justify-between">
         <span className="flex items-center gap-2 text-[12px] font-medium text-foreground/60">
           Gradient
           {gradientTo !== undefined && (
@@ -188,7 +201,7 @@ function SpaceEditor({
         />
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 max-w-full items-center gap-2">
         {editing && (
           <button
             type="button"
@@ -239,18 +252,19 @@ export function SpacesBar({
       }}
     >
       <PopoverAnchor asChild>
-        <div
-          className="scout-scroll-area flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden [justify-content:safe_center] [app-region:no-drag] [-webkit-app-region:no-drag]"
-          onWheel={(event) => {
-            // A mouse wheel only reports vertical deltas; steer the dominant
-            // axis into the strip so it scrolls without a trackpad.
-            const strip = event.currentTarget;
-            if (strip.scrollWidth <= strip.clientWidth) return;
-            if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-              strip.scrollLeft += event.deltaY;
-            }
-          }}
-        >
+        <div className="flex min-w-0 flex-1 items-center gap-0.5 [app-region:no-drag] [-webkit-app-region:no-drag]">
+          <div
+            className="scout-scroll-area flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden [justify-content:safe_center]"
+            onWheel={(event) => {
+              // A mouse wheel only reports vertical deltas; steer the dominant
+              // axis into the strip so it scrolls without a trackpad.
+              const strip = event.currentTarget;
+              if (strip.scrollWidth <= strip.clientWidth) return;
+              if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+                strip.scrollLeft += event.deltaY;
+              }
+            }}
+          >
           {spaces.spaces.map((space) => {
             const active = space.id === spaces.active.id;
             const dot = (
@@ -290,10 +304,25 @@ export function SpacesBar({
                     });
                   }}
                 >
-                  <span
-                    className="size-[11px] rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
-                    style={{ background: spaceSwatch(space) }}
-                  />
+                  {space.icon ? (
+                    <span
+                      className="grid size-[17px] place-items-center"
+                      style={{
+                        color: 'color-mix(in srgb, var(--sidebar-foreground) 72%, '
+                          + `${space.color})`,
+                      }}
+                    >
+                      <SpaceIconGlyph
+                        icon={space.icon}
+                        className="size-3 text-[12px]"
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      className="size-[11px] rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.15)]"
+                      style={{ background: spaceSwatch(space) }}
+                    />
+                  )}
                 </button>
               </TooltipTrigger>
             );
@@ -335,69 +364,76 @@ export function SpacesBar({
               </ContextMenu>
             );
           })}
-        </div>
-      </PopoverAnchor>
+          </div>
 
-      {/* The single footer plus, Zen-style: one button, a small create
-          menu — the OS menu when the binary supports it. The data attribute
-          tells the dogfood probe that automation cannot click into it. */}
-      {nativeMenus !== false ? (
-        <button
-          type="button"
-          data-probe-native-menu=""
-          className="new-tab grid size-7 shrink-0 cursor-default place-items-center rounded-[7px] text-sidebar-foreground/70 outline-none transition-colors hover:bg-surface hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-foreground/40 [app-region:no-drag] [-webkit-app-region:no-drag]"
-          aria-label="Create new..."
-          onClick={(event) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            onMenuOpenChange?.(true);
-            void showNativeMenu(rect.left, rect.top - 4, [
-              { id: 'new-space', title: 'New Space', icon: 'square.stack' },
-              {
-                id: 'new-tab',
-                title: 'New Tab',
-                icon: 'plus.square',
-                accelerator: 'Ctrl+T',
-              },
-            ]).then((action) => {
-              onMenuOpenChange?.(false);
-              if (action === 'new-space') {
-                setEditor({ mode: 'create' });
-              } else if (action === 'new-tab') {
-                perform(() => tabs.create({ url: home, active: true }));
-              }
-            });
-          }}
-        >
-          <Plus className="size-4" strokeWidth={2} />
-        </button>
-      ) : (
-        <DropdownMenu onOpenChange={onMenuOpenChange}>
-          <DropdownMenuTrigger asChild>
+          {/* The single footer plus, Zen-style: one button, a small create
+              menu — the OS menu when the binary supports it. The data attribute
+              tells the dogfood probe that automation cannot click into it. */}
+          {nativeMenus !== false ? (
             <button
               type="button"
+              data-probe-native-menu=""
               className="new-tab grid size-7 shrink-0 cursor-default place-items-center rounded-[7px] text-sidebar-foreground/70 outline-none transition-colors hover:bg-surface hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-foreground/40 [app-region:no-drag] [-webkit-app-region:no-drag]"
               aria-label="Create new..."
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                onMenuOpenChange?.(true);
+                void showNativeMenu(rect.left, rect.top - 4, [
+                  { id: 'new-space', title: 'New Space', icon: 'square.stack' },
+                  {
+                    id: 'new-tab',
+                    title: 'New Tab',
+                    icon: 'plus.square',
+                    accelerator: 'Ctrl+T',
+                  },
+                ]).then((action) => {
+                  onMenuOpenChange?.(false);
+                  if (action === 'new-space') {
+                    setEditor({ mode: 'create' });
+                  } else if (action === 'new-tab') {
+                    perform(() => tabs.create({ url: home, active: true }));
+                  }
+                });
+              }}
             >
               <Plus className="size-4" strokeWidth={2} />
             </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="end">
-            <DropdownMenuItem onSelect={() => setEditor({ mode: 'create' })}>
-              <SquareStack />
-              New Space
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              data-probe="create-tab"
-              onSelect={() => perform(() => tabs.create({ url: home, active: true }))}
-            >
-              <SquarePlus />
-              New Tab
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+          ) : (
+            <DropdownMenu onOpenChange={onMenuOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="new-tab grid size-7 shrink-0 cursor-default place-items-center rounded-[7px] text-sidebar-foreground/70 outline-none transition-colors hover:bg-surface hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-foreground/40 [app-region:no-drag] [-webkit-app-region:no-drag]"
+                  aria-label="Create new..."
+                >
+                  <Plus className="size-4" strokeWidth={2} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end">
+                <DropdownMenuItem onSelect={() => setEditor({ mode: 'create' })}>
+                  <SquareStack />
+                  New Space
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-probe="create-tab"
+                  onSelect={() => perform(() => tabs.create({ url: home, active: true }))}
+                >
+                  <SquarePlus />
+                  New Tab
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </PopoverAnchor>
 
-      <PopoverContent side="top">
+      <PopoverContent
+        side="top"
+        align="end"
+        sideOffset={10}
+        collisionPadding={12}
+        className="max-w-[calc(100vw-24px)] overflow-hidden"
+      >
         {editor && (
           <SpaceEditor
             key={editor.mode === 'edit' ? editor.space.id : 'create'}

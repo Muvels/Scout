@@ -83,6 +83,17 @@ function isSpace(value: unknown): value is Space {
     && typeof space.name === 'string'
     && typeof space.color === 'string'
     && (space.gradientTo === undefined || typeof space.gradientTo === 'string')
+    && (
+      space.icon === undefined
+      || (
+        typeof space.icon === 'object'
+        && space.icon !== null
+        && (space.icon.kind === 'emoji' || space.icon.kind === 'symbol')
+        && typeof space.icon.value === 'string'
+        && space.icon.value.length > 0
+        && space.icon.value.length <= 32
+      )
+    )
   );
 }
 

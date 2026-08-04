@@ -4,6 +4,13 @@ export type Space = {
   color: string;
   /** Second gradient stop; a space without one keeps a solid wash. */
   gradientTo?: string;
+  /** Optional Arc-style glyph shown in the spaces strip. */
+  icon?: SpaceIcon;
+};
+
+export type SpaceIcon = {
+  kind: 'emoji' | 'symbol';
+  value: string;
 };
 
 /** The Arc-style swatch row offered when creating or editing a space. */
@@ -24,6 +31,7 @@ export const DEFAULT_SPACE: Space = {
   id: 'default',
   name: 'Home',
   color: SPACE_COLORS[0],
+  icon: { kind: 'symbol', value: 'home' },
 };
 
 function channel(hex: string, offset: number): number {

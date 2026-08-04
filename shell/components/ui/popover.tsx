@@ -32,7 +32,9 @@ export const PopoverContent = forwardRef<
       >
         {/* Portaled content overhangs the page rect; the overlay claims its
             input back from the tab below the shell. */}
-        <ShellOverlay className="block">{children}</ShellOverlay>
+        <ShellOverlay className="block w-full min-w-0 max-w-full">
+          {children}
+        </ShellOverlay>
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );
