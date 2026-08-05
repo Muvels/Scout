@@ -16,7 +16,7 @@ export const Command = forwardRef<
     <CommandPrimitive
       ref={ref}
       className={cn(
-        'flex size-full flex-col overflow-hidden rounded-[inherit] text-popover-foreground',
+        'flex size-full flex-col overflow-hidden rounded-[inherit] font-sans text-popover-foreground',
         className,
       )}
       {...props}
@@ -55,7 +55,7 @@ export const CommandInput = forwardRef<
       <CommandPrimitive.Input
         ref={ref}
         className={cn(
-          'h-full min-w-0 flex-1 bg-transparent text-[15px] tracking-[-0.01em] text-foreground outline-none placeholder:text-foreground/38 disabled:cursor-not-allowed disabled:opacity-50',
+          'h-full min-w-0 flex-1 bg-transparent text-[15px] font-medium tracking-[-0.01em] text-foreground outline-none placeholder:text-foreground/38 disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}

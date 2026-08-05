@@ -157,7 +157,7 @@ function NativeMatchItem({
       onSelect={onSelect}
     >
       <StoredFavicon url={match.destinationUrl} title={title} />
-      <span className="min-w-0 flex-1 truncate font-medium">
+      <span className="min-w-0 flex-1 truncate font-medium group-data-[selected=true]:font-semibold">
         {title}
       </span>
       {detail.length > 0 && detail !== title && (
@@ -171,7 +171,7 @@ function NativeMatchItem({
 
 function SwitchHint() {
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-2 text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
+    <span className="ml-auto flex shrink-0 items-center gap-2 text-[12px] font-medium text-black/40 group-data-[selected=true]:font-semibold group-data-[selected=true]:text-accent-foreground/85">
       Switch to Tab
       <span className="grid size-6 place-items-center rounded-[6px] bg-black/6 text-black/55 transition-colors group-data-[selected=true]:bg-white group-data-[selected=true]:text-slate-600">
         <ArrowRight className="size-[15px]" strokeWidth={2.1} />
@@ -550,7 +550,7 @@ export function Omnibox({
                     {isNavigableInput(query)
                       ? <Globe className="size-[17px] text-black/55 group-data-[selected=true]:text-accent-foreground" strokeWidth={2} />
                       : <Search className="size-[17px] text-black/55 group-data-[selected=true]:text-accent-foreground" strokeWidth={2.25} />}
-                    <span className="min-w-0 flex-1 truncate font-medium">
+                    <span className="min-w-0 flex-1 truncate font-medium group-data-[selected=true]:font-semibold">
                       {isNavigableInput(query)
                         ? `Open ${query.trim()}`
                         : `Search for “${query.trim()}”`}
@@ -575,7 +575,7 @@ export function Omnibox({
                     }}
                   >
                     <Search className="size-[17px] text-black/55 group-data-[selected=true]:text-accent-foreground" strokeWidth={2.25} />
-                    <span className="min-w-0 flex-1 truncate font-medium">
+                    <span className="min-w-0 flex-1 truncate font-medium group-data-[selected=true]:font-semibold">
                       {phrase}
                     </span>
                   </CommandItem>
@@ -615,7 +615,7 @@ export function Omnibox({
                       }}
                     >
                       <RowFavicon tab={tab} />
-                      <span className="min-w-0 flex-1 truncate font-medium">
+                      <span className="min-w-0 flex-1 truncate font-medium group-data-[selected=true]:font-semibold">
                         {title}
                       </span>
                       {!anchored && <SwitchHint />}
@@ -643,7 +643,7 @@ export function Omnibox({
                     ) : (
                       <StoredFavicon url={row.url} title={row.title} />
                     )}
-                    <span className="min-w-0 flex-1 truncate font-medium">
+                    <span className="min-w-0 flex-1 truncate font-medium group-data-[selected=true]:font-semibold">
                       {row.title}
                     </span>
                     {!anchored ? (
