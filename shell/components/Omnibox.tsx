@@ -68,6 +68,9 @@ type SpaceRecommendation = {
   dormant: boolean;
 };
 
+const CENTERED_ITEM_CLASS =
+  "min-h-[51px] px-3 before:pointer-events-none before:absolute before:inset-x-0 before:inset-y-[3px] before:rounded-[7px] before:content-[''] before:transition-colors data-[selected=true]:bg-transparent data-[selected=true]:before:bg-accent [&>*]:relative [&>*]:z-[1]";
+
 function normalizedUrl(value: string): string {
   try {
     return new URL(value).href;
@@ -150,7 +153,7 @@ function NativeMatchItem({
   return (
     <CommandItem
       value={nativeMatchValue(match)}
-      className={cn(!anchored && 'min-h-12 px-3')}
+      className={cn(!anchored && CENTERED_ITEM_CLASS)}
       onSelect={onSelect}
     >
       <StoredFavicon url={match.destinationUrl} title={title} />
@@ -168,9 +171,9 @@ function NativeMatchItem({
 
 function SwitchHint() {
   return (
-    <span className="ml-auto flex shrink-0 items-center gap-2.5 text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
+    <span className="ml-auto flex shrink-0 items-center gap-2 text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
       Switch to Tab
-      <span className="grid size-7 place-items-center rounded-[8px] bg-black/6 text-black/55 transition-colors group-data-[selected=true]:bg-white group-data-[selected=true]:text-slate-600">
+      <span className="grid size-6 place-items-center rounded-[6px] bg-black/6 text-black/55 transition-colors group-data-[selected=true]:bg-white group-data-[selected=true]:text-slate-600">
         <ArrowRight className="size-[15px]" strokeWidth={2.1} />
       </span>
     </span>
@@ -456,13 +459,13 @@ export function Omnibox({
       />
       <div
         className={cn(
-          'absolute overflow-hidden rounded-[14px] border border-black/8 bg-popover text-popover-foreground shadow-[0_24px_70px_rgba(15,20,30,0.28),0_2px_10px_rgba(15,20,30,0.1)] backdrop-blur-2xl',
+          'absolute overflow-hidden rounded-[11px] border border-black/8 bg-[rgb(247_248_249_/_0.92)] text-popover-foreground shadow-[0_22px_55px_rgba(15,23,42,0.22),0_2px_8px_rgba(15,23,42,0.1)] backdrop-blur-[28px] backdrop-saturate-[1.15] [--accent:#98aabd] [--accent-foreground:white]',
           anchored
             ? cn(
                 'top-[42px] w-[min(400px,calc(100vw-24px))]',
                 side === 'right' ? 'right-3' : 'left-3',
               )
-            : 'left-1/2 top-1/2 w-[min(660px,calc(100vw-80px))] -translate-x-1/2 -translate-y-1/2',
+            : 'left-1/2 top-1/2 w-[min(760px,calc(100vw-80px))] -translate-x-1/2 -translate-y-1/2',
         )}
       >
         <Command
@@ -480,6 +483,8 @@ export function Omnibox({
             ref={inputRef}
             value={query}
             onValueChange={setQuery}
+            wrapperClassName={cn(!anchored && 'h-16 px-5')}
+            className={cn(!anchored && 'placeholder:text-foreground/48')}
             placeholder="Search or Enter URL..."
             inputMode="url"
             autoCapitalize="none"
@@ -508,20 +513,13 @@ export function Omnibox({
                 >
                   <Info className="size-[17px]" strokeWidth={1.8} />
                 </button>
-              ) : (
-                <span
-                  className="grid size-6 shrink-0 place-items-center text-foreground/40"
-                  aria-hidden="true"
-                >
-                  <Info className="size-[17px]" strokeWidth={1.8} />
-                </span>
-              )
+              ) : undefined
             }
           />
 
           {/* Five rows plus the list padding keeps the palette steady while
               additional results remain available to scroll. */}
-          <CommandList className={anchored ? 'h-[208px]' : 'h-[248px]'}>
+          <CommandList className={anchored ? 'h-[208px]' : 'h-[263px]'}>
             {displayedCount === 0 && (
               <div className="py-9 text-center text-sm text-muted-foreground">
                 No tabs or sites found.
@@ -546,7 +544,7 @@ export function Omnibox({
                 {showDirectAction && (
                   <CommandItem
                     value={directItemValue}
-                    className={cn(!anchored && 'min-h-12 px-3')}
+                    className={cn(!anchored && CENTERED_ITEM_CLASS)}
                     onSelect={submitQuery}
                   >
                     {isNavigableInput(query)
@@ -559,7 +557,7 @@ export function Omnibox({
                     </span>
                     <span className="ml-auto flex shrink-0 items-center gap-2.5 text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
                       {mode === 'create' ? 'New Tab' : 'Go'}
-                      <span className="grid size-7 place-items-center rounded-[8px] bg-black/6 text-black/55 transition-colors group-data-[selected=true]:bg-white group-data-[selected=true]:text-slate-600">
+                      <span className="grid size-6 place-items-center rounded-[6px] bg-black/6 text-black/55 transition-colors group-data-[selected=true]:bg-white group-data-[selected=true]:text-slate-600">
                         <ArrowRight className="size-[15px]" strokeWidth={2.1} />
                       </span>
                     </span>
@@ -570,7 +568,7 @@ export function Omnibox({
                   <CommandItem
                     key={`phrase-${phrase}`}
                     value={`phrase ${phrase}`}
-                    className={cn(!anchored && 'min-h-12 px-3')}
+                    className={cn(!anchored && CENTERED_ITEM_CLASS)}
                     onSelect={() => {
                       close();
                       navigate(phrase, mode);
@@ -610,7 +608,7 @@ export function Omnibox({
                     <CommandItem
                       key={tab.id}
                       value={`tab ${tab.id}`}
-                      className={cn(!anchored && 'min-h-12 px-3')}
+                      className={cn(!anchored && CENTERED_ITEM_CLASS)}
                       onSelect={() => {
                         close();
                         activate(tab.id);
@@ -633,7 +631,7 @@ export function Omnibox({
                   <CommandItem
                     key={row.key}
                     value={`recommendation ${row.id} ${row.title} ${row.url}`}
-                    className={cn(!anchored && 'min-h-12 px-3')}
+                    className={cn(!anchored && CENTERED_ITEM_CLASS)}
                     onSelect={() => {
                       close();
                       if (row.dormant) openEntry(row.id);
@@ -648,9 +646,13 @@ export function Omnibox({
                     <span className="min-w-0 flex-1 truncate font-medium">
                       {row.title}
                     </span>
-                    <span className="ml-auto max-w-[40%] shrink-0 truncate text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
-                      {tabHost({ url: row.url, title: row.title })}
-                    </span>
+                    {!anchored ? (
+                      <SwitchHint />
+                    ) : (
+                      <span className="ml-auto max-w-[40%] shrink-0 truncate text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
+                        {tabHost({ url: row.url, title: row.title })}
+                      </span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

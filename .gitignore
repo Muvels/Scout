@@ -26,3 +26,7 @@ __pycache__/
 # Editor and OS noise
 .DS_Store
 *.log
+
+# Local drafts for documenting and promoting Scout on X. These posts and their
+# screenshots are working material and should not be published with the source.
+x-posts/

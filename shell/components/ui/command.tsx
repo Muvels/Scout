@@ -29,11 +29,21 @@ export const CommandInput = forwardRef<
   ComponentPropsWithoutRef<typeof CommandPrimitive.Input> & {
     icon?: ReactNode;
     trailing?: ReactNode;
+    wrapperClassName?: string;
   }
->(function CommandInput({ className, icon, trailing, ...props }, ref) {
+>(function CommandInput({
+  className,
+  icon,
+  trailing,
+  wrapperClassName,
+  ...props
+}, ref) {
   return (
     <div
-      className="flex h-[52px] shrink-0 items-center gap-2.5 px-4"
+      className={cn(
+        'relative flex h-[52px] shrink-0 items-center gap-2.5 px-4',
+        wrapperClassName,
+      )}
       cmdk-input-wrapper=""
     >
       {icon ?? (
@@ -51,6 +61,10 @@ export const CommandInput = forwardRef<
         {...props}
       />
       {trailing}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-3 bottom-0 h-px bg-black/8"
+      />
     </div>
   );
 });
@@ -124,7 +138,7 @@ export const CommandItem = forwardRef<
     <CommandPrimitive.Item
       ref={ref}
       className={cn(
-        'group relative flex min-h-10 cursor-default select-none items-center gap-3 rounded-[9px] px-2.5 py-1.5 text-[13px] outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+        'group relative flex min-h-10 cursor-default select-none items-center gap-3 rounded-[7px] px-2.5 py-1.5 text-[13px] outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0',
         className,
       )}
       {...props}
