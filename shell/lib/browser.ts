@@ -48,7 +48,7 @@ export function setSearchEngine(engine: SearchEngine): void {
 // Schemes the address bar navigates to directly; anything else typed with a
 // colon is far more likely a search ("weather: berlin") than a protocol.
 const NAVIGABLE_SCHEME =
-  /^(https?|chrome|chrome-untrusted|about|file|view-source|devtools):/i;
+  /^(https?|scout|chrome|chrome-untrusted|about|file|view-source|devtools):/i;
 
 // A bare address needs a dot (example.com), a port (localhost:8080), or to
 // be localhost; lone words are searches.

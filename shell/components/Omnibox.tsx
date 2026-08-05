@@ -308,9 +308,14 @@ export function Omnibox({
     },
     [suggestions.matches, needle],
   );
-  const primaryMatch = matchRows.find(
-    (match) => match.type === 'history' || match.type === 'bookmark',
-  );
+  // An explicit address must always beat history (which may contain an old
+  // search for that literal text). Plain queries can still promote their
+  // strongest visited-site match above the search action.
+  const primaryMatch = isNavigableInput(query)
+    ? undefined
+    : matchRows.find(
+        (match) => match.type === 'history' || match.type === 'bookmark',
+      );
   const remainingMatchRows = matchRows.filter(
     (match) => match !== primaryMatch,
   );
