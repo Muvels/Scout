@@ -12,6 +12,7 @@ import {
 } from 'react';
 import type { Tab } from 'tbf/shell';
 import { ShellOverlay } from 'tbf/shell/react';
+import type { OmniboxMatch } from 'tbf/shell/services';
 import type { EntryInfo, SearchEngine } from '../../shared/ipc.js';
 import { useSearchSuggestions } from '../hooks/useSearchSuggestions.js';
 import { useVisitScores } from '../hooks/useVisitScores.js';
@@ -75,6 +76,23 @@ function normalizedUrl(value: string): string {
   }
 }
 
+// Chromium can emit both a generated http(s) navigation candidate and the
+// matching history entry. Treat those as one result so the richer, titled
+// history row wins instead of showing the same page twice.
+function resultUrlKey(value: string): string {
+  try {
+    const parsed = new URL(value);
+    const path = parsed.pathname.replace(/\/+$/u, '') || '/';
+    return `${parsed.host.toLowerCase()}${path}${parsed.search}`;
+  } catch {
+    return value.trim().toLowerCase();
+  }
+}
+
+function nativeMatchValue(match: OmniboxMatch): string {
+  return `match ${match.id} ${match.destinationUrl}`;
+}
+
 function RowFavicon({ tab }: { tab: Tab }) {
   if (tab.favIconUrl) {
     return (
@@ -109,6 +127,42 @@ function StoredFavicon({ url, title }: { url: string; title: string }) {
       className="size-[17px] shrink-0 rounded-[4px] object-contain"
       onError={() => setFailed(true)}
     />
+  );
+}
+
+function NativeMatchItem({
+  match,
+  anchored,
+  onSelect,
+}: {
+  match: OmniboxMatch;
+  anchored: boolean;
+  onSelect: () => void;
+}) {
+  const description = match.description.trim();
+  const hasTitle =
+    description.length > 0 && description !== match.displayText.trim();
+  const title = hasTitle ? description : match.displayText;
+  const detail = hasTitle
+    ? match.displayText
+    : tabHost({ url: match.destinationUrl, title });
+
+  return (
+    <CommandItem
+      value={nativeMatchValue(match)}
+      className={cn(!anchored && 'min-h-12 px-3')}
+      onSelect={onSelect}
+    >
+      <StoredFavicon url={match.destinationUrl} title={title} />
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {title}
+      </span>
+      {detail.length > 0 && detail !== title && (
+        <span className="ml-auto max-w-[40%] shrink-0 truncate text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
+          {detail}
+        </span>
+      )}
+    </CommandItem>
   );
 }
 
@@ -156,6 +210,7 @@ export function Omnibox({
 }: OmniboxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
+  const [selectedValue, setSelectedValue] = useState('');
   // ⌘L anchors to the sidebar address pill it expands on; ⌘T (and any
   // omnibox without a sidebar to anchor to) is the centered palette.
   const anchored = mode === 'navigate' && sidebarOpen;
@@ -219,8 +274,8 @@ export function Omnibox({
     [suggestions.phrases, needle],
   );
   const matchRows = useMemo(
-    () =>
-      suggestions.matches
+    () => {
+      const ranked = suggestions.matches
         .filter(
           (match) =>
             (match.type === 'history'
@@ -228,8 +283,36 @@ export function Omnibox({
               || match.type === 'url')
             && match.displayText.trim().toLowerCase() !== needle,
         )
-        .slice(0, 3),
+        .map((match, index) => ({ match, index }))
+        .sort((left, right) => {
+          const leftVisited =
+            left.match.type === 'history' || left.match.type === 'bookmark';
+          const rightVisited =
+            right.match.type === 'history' || right.match.type === 'bookmark';
+          return (
+            Number(rightVisited) - Number(leftVisited)
+            || right.match.relevance - left.match.relevance
+            || left.index - right.index
+          );
+        });
+      const seen = new Set<string>();
+      return ranked
+        .map(({ match }) => match)
+        .filter((match) => {
+          const key = resultUrlKey(match.destinationUrl);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 3);
+    },
     [suggestions.matches, needle],
+  );
+  const primaryMatch = matchRows.find(
+    (match) => match.type === 'history' || match.type === 'bookmark',
+  );
+  const remainingMatchRows = matchRows.filter(
+    (match) => match !== primaryMatch,
   );
 
   const activeSpaceTabs = useMemo(
@@ -329,6 +412,21 @@ export function Omnibox({
       .slice(0, Math.max(0, 5 - listedCount));
   }, [spaceGroups, matchRows, directDestination, recommendationPool, listedCount]);
   const displayedCount = listedCount + recommendationRows.length;
+  const directItemValue = `open search navigate ${query}`;
+  const firstSelectableValue = primaryMatch !== undefined
+    ? nativeMatchValue(primaryMatch)
+    : showDirectAction
+      ? directItemValue
+      : recommendationRows[0] !== undefined
+        ? `recommendation ${recommendationRows[0].id} ${recommendationRows[0].title} ${recommendationRows[0].url}`
+        : '';
+
+  // Native history arrives after the immediate search row. Move keyboard
+  // selection to that newly promoted first result so Return opens the page
+  // the user has visited, matching the visual ordering.
+  useEffect(() => {
+    setSelectedValue(firstSelectableValue);
+  }, [firstSelectableValue, typed]);
 
   if (!mode) return null;
 
@@ -364,6 +462,8 @@ export function Omnibox({
       >
         <Command
           loop
+          value={selectedValue}
+          onValueChange={setSelectedValue}
           // Filtering and ordering are handled above; cmdk only supplies
           // the keyboard-navigable list.
           shouldFilter={false}
@@ -427,9 +527,20 @@ export function Omnibox({
               || phraseRows.length > 0
               || matchRows.length > 0) && (
               <CommandGroup>
+                {primaryMatch !== undefined && (
+                  <NativeMatchItem
+                    match={primaryMatch}
+                    anchored={anchored}
+                    onSelect={() => {
+                      close();
+                      navigate(primaryMatch.destinationUrl, mode);
+                    }}
+                  />
+                )}
+
                 {showDirectAction && (
                   <CommandItem
-                    value={`open search navigate ${query}`}
+                    value={directItemValue}
                     className={cn(!anchored && 'min-h-12 px-3')}
                     onSelect={submitQuery}
                   >
@@ -467,35 +578,16 @@ export function Omnibox({
                   </CommandItem>
                 ))}
 
-                {matchRows.map((match) => (
-                  <CommandItem
+                {remainingMatchRows.map((match) => (
+                  <NativeMatchItem
                     key={`match-${match.id}-${match.destinationUrl}`}
-                    value={`match ${match.id} ${match.destinationUrl}`}
-                    className={cn(!anchored && 'min-h-12 px-3')}
+                    match={match}
+                    anchored={anchored}
                     onSelect={() => {
                       close();
                       navigate(match.destinationUrl, mode);
                     }}
-                  >
-                    {match.iconUrl ? (
-                      <img
-                        src={match.iconUrl}
-                        alt=""
-                        className="size-[17px] shrink-0 rounded-[4px] object-contain"
-                      />
-                    ) : (
-                      <Globe className="size-[17px] text-black/55 group-data-[selected=true]:text-accent-foreground" strokeWidth={2} />
-                    )}
-                    <span className="min-w-0 flex-1 truncate font-medium">
-                      {match.displayText}
-                    </span>
-                    {match.description
-                      && match.description !== match.displayText && (
-                      <span className="ml-auto max-w-[40%] shrink-0 truncate text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
-                        {match.description}
-                      </span>
-                    )}
-                  </CommandItem>
+                  />
                 ))}
               </CommandGroup>
             )}

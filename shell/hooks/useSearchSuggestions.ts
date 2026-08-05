@@ -46,6 +46,9 @@ export function useSearchSuggestions(
       setMatches([]);
       return;
     }
+    // Do not leave the previous query's history result visible (and selected)
+    // while Chromium evaluates the new input.
+    setMatches([]);
     let stale = false;
     let unsubscribe: (() => void) | undefined;
     try {
