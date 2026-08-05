@@ -771,6 +771,9 @@ export function Browser() {
           spaces={spaces.spaces}
           activeSpaceId={spaces.active.id}
           tabsBySpaceId={spaceTabs.tabsBySpaceId}
+          pinnedOrder={spaceTabs.pinnedOrder}
+          regularOrder={spaceTabs.regularOrder}
+          entryInfo={spaceTabs.entryInfo}
           scopeToSpace={paletteScope}
           searchEngine={searchEngine}
           close={() => setOmnibox(undefined)}
@@ -780,6 +783,7 @@ export function Browser() {
             spaceTabs.followTab(tabId);
             perform(() => tabs.activate(tabId));
           }}
+          openEntry={spaceTabs.openEntry}
           openSiteInfo={() => setSiteInfo(true)}
         />
 

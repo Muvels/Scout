@@ -12,11 +12,15 @@ import {
 } from 'react';
 import type { Tab } from 'tbf/shell';
 import { ShellOverlay } from 'tbf/shell/react';
-import type { SearchEngine } from '../../shared/ipc.js';
+import type { EntryInfo, SearchEngine } from '../../shared/ipc.js';
 import { useSearchSuggestions } from '../hooks/useSearchSuggestions.js';
+import { useVisitScores } from '../hooks/useVisitScores.js';
 import {
+  destinationForInput,
   faviconFallback,
+  faviconForUrl,
   isNavigableInput,
+  tabHost,
   tabTitle,
 } from '../lib/browser.js';
 import { spaceSwatch, type Space } from '../lib/spaces.js';
@@ -38,14 +42,38 @@ type OmniboxProps = {
   spaces: Space[];
   activeSpaceId: string;
   tabsBySpaceId: Record<string, Tab[]>;
+  /** Active-space section order; pins never cross a space boundary. */
+  pinnedOrder: string[];
+  /** Active-space regular entries, used for frequent-site fallbacks. */
+  regularOrder: string[];
+  /** Cached URL/title identities for active-space dormant entries. */
+  entryInfo: Record<string, EntryInfo>;
   /** The scout://settings scope: list only the active space's tabs. */
   scopeToSpace: boolean;
   searchEngine: SearchEngine;
   close: () => void;
   navigate: (input: string, mode: OmniboxMode) => void;
   activate: (tabId: string) => void;
+  openEntry: (key: string) => void;
   openSiteInfo: () => void;
 };
+
+type SpaceRecommendation = {
+  key: string;
+  id: string;
+  url: string;
+  title: string;
+  tab?: Tab;
+  dormant: boolean;
+};
+
+function normalizedUrl(value: string): string {
+  try {
+    return new URL(value).href;
+  } catch {
+    return value;
+  }
+}
 
 function RowFavicon({ tab }: { tab: Tab }) {
   if (tab.favIconUrl) {
@@ -62,6 +90,25 @@ function RowFavicon({ tab }: { tab: Tab }) {
     <span className="grid size-[17px] shrink-0 place-items-center rounded-[4px] bg-black/8 text-[9px] font-bold text-black/55 group-data-[selected=true]:bg-white/25 group-data-[selected=true]:text-white">
       {faviconFallback(tabTitle(tab))}
     </span>
+  );
+}
+
+function StoredFavicon({ url, title }: { url: string; title: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span className="grid size-[17px] shrink-0 place-items-center rounded-[4px] bg-black/8 text-[9px] font-bold text-black/55 group-data-[selected=true]:bg-white/25 group-data-[selected=true]:text-white">
+        {faviconFallback(title)}
+      </span>
+    );
+  }
+  return (
+    <img
+      src={faviconForUrl(url)}
+      alt=""
+      className="size-[17px] shrink-0 rounded-[4px] object-contain"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -96,11 +143,15 @@ export function Omnibox({
   spaces,
   activeSpaceId,
   tabsBySpaceId,
+  pinnedOrder,
+  regularOrder,
+  entryInfo,
   scopeToSpace,
   searchEngine,
   close,
   navigate,
   activate,
+  openEntry,
   openSiteInfo,
 }: OmniboxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +186,9 @@ export function Omnibox({
   // suggestion and tab rows keep a stable, deliberate order instead of
   // being re-sorted by fuzzy match scores.
   const spaceGroups = useMemo(() => {
+    // With no query, the palette is a recommendation surface owned by the
+    // active space. Cross-space tabs remain explicit typed-query results.
+    if (!engaged) return [];
     const ordered = [
       ...spaces.filter((space) => space.id === activeSpaceId),
       ...(scopeToSpace
@@ -146,13 +200,12 @@ export function Omnibox({
         space,
         tabs: (tabsBySpaceId[space.id] ?? []).filter(
           (tab) =>
-            needle === ''
-            || tabTitle(tab).toLowerCase().includes(needle)
+            tabTitle(tab).toLowerCase().includes(needle)
             || tab.url.toLowerCase().includes(needle),
         ),
       }))
       .filter((group) => group.tabs.length > 0);
-  }, [spaces, activeSpaceId, tabsBySpaceId, scopeToSpace, needle]);
+  }, [spaces, activeSpaceId, tabsBySpaceId, scopeToSpace, needle, engaged]);
   const tabCount = spaceGroups.reduce((sum, group) => sum + group.tabs.length, 0);
   const showHeadings = !scopeToSpace && spaceGroups.length > 1;
 
@@ -179,6 +232,104 @@ export function Omnibox({
     [suggestions.matches, needle],
   );
 
+  const activeSpaceTabs = useMemo(
+    () => tabsBySpaceId[activeSpaceId] ?? [],
+    [tabsBySpaceId, activeSpaceId],
+  );
+  const recommendationSections = useMemo(() => {
+    const byId = new Map(activeSpaceTabs.map((tab) => [tab.id, tab]));
+    const orderedIds = new Set([...pinnedOrder, ...regularOrder]);
+    const pinnedIds = [
+      ...pinnedOrder,
+      ...activeSpaceTabs
+        .filter((tab) => tab.pinned && !orderedIds.has(tab.id))
+        .map((tab) => tab.id),
+    ];
+    const regularIds = [
+      ...regularOrder,
+      ...activeSpaceTabs
+        .filter((tab) => !tab.pinned && !orderedIds.has(tab.id))
+        .map((tab) => tab.id),
+    ];
+    const rows = (ids: string[]): SpaceRecommendation[] => {
+      const result: SpaceRecommendation[] = [];
+      for (const id of ids) {
+        const tab = byId.get(id);
+        if (tab !== undefined) {
+          result.push({
+            key: `tab:${id}`,
+            id,
+            url: tab.url,
+            title: tabTitle(tab),
+            tab,
+            dormant: false,
+          });
+          continue;
+        }
+        const info = entryInfo[id];
+        if (info === undefined) continue;
+        result.push({
+          key: `entry:${id}`,
+          id,
+          url: info.url,
+          title: tabTitle({ url: info.url, title: info.title ?? '' }),
+          dormant: true,
+        });
+      }
+      return result;
+    };
+    return { pinned: rows(pinnedIds), regular: rows(regularIds) };
+  }, [activeSpaceTabs, pinnedOrder, regularOrder, entryInfo]);
+  const regularUrls = useMemo(
+    () => recommendationSections.regular.map((row) => row.url),
+    [recommendationSections.regular],
+  );
+  const visitScores = useVisitScores(regularUrls);
+  const recommendationPool = useMemo(() => {
+    const frequent = [...recommendationSections.regular].sort((left, right) => {
+      const leftScore = visitScores.get(left.url);
+      const rightScore = visitScores.get(right.url);
+      return (
+        (rightScore?.count ?? 0) - (leftScore?.count ?? 0)
+        || (rightScore?.lastVisitTime ?? 0) - (leftScore?.lastVisitTime ?? 0)
+      );
+    });
+    const seen = new Set<string>();
+    return [...recommendationSections.pinned, ...frequent].filter((row) => {
+      const url = normalizedUrl(row.url);
+      if (seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    });
+  }, [recommendationSections, visitScores]);
+
+  const showDirectAction = engaged;
+  const listedCount =
+    (showDirectAction ? 1 : 0) + phraseRows.length + matchRows.length + tabCount;
+  const directDestination =
+    showDirectAction && isNavigableInput(query)
+      ? destinationForInput(query)
+      : undefined;
+  const recommendationRows = useMemo(() => {
+    const shownTabIds = new Set(
+      spaceGroups.flatMap((group) => group.tabs.map((tab) => tab.id)),
+    );
+    const shownUrls = new Set(
+      matchRows.map((match) => normalizedUrl(match.destinationUrl)),
+    );
+    if (directDestination !== undefined) {
+      shownUrls.add(normalizedUrl(directDestination));
+    }
+    return recommendationPool
+      .filter(
+        (row) =>
+          !shownTabIds.has(row.id)
+          && !shownUrls.has(normalizedUrl(row.url)),
+      )
+      .slice(0, Math.max(0, 5 - listedCount));
+  }, [spaceGroups, matchRows, directDestination, recommendationPool, listedCount]);
+  const displayedCount = listedCount + recommendationRows.length;
+
   if (!mode) return null;
 
   const submitQuery = () => {
@@ -187,13 +338,6 @@ export function Omnibox({
     close();
     navigate(input, mode);
   };
-  const showDirectAction = engaged;
-  const listedCount =
-    (showDirectAction ? 1 : 0) + phraseRows.length + matchRows.length + tabCount;
-  // With no tabs and nothing typed there is nothing to list: stay a bare
-  // input instead of an empty results pane.
-  const showList = tabCount > 0 || typed.length > 0;
-
   return (
     <ShellOverlay
       className="fixed inset-0 z-[80] [app-region:no-drag] [-webkit-app-region:no-drag]"
@@ -215,7 +359,7 @@ export function Omnibox({
                 'top-[42px] w-[min(400px,calc(100vw-24px))]',
                 side === 'right' ? 'right-3' : 'left-3',
               )
-            : 'left-1/2 top-[40%] w-[min(660px,calc(100vw-80px))] -translate-x-1/2 -translate-y-1/2',
+            : 'left-1/2 top-1/2 w-[min(660px,calc(100vw-80px))] -translate-x-1/2 -translate-y-1/2',
         )}
       >
         <Command
@@ -270,9 +414,10 @@ export function Omnibox({
             }
           />
 
-          {showList && (
-          <CommandList className={cn(!anchored && 'max-h-[420px]')}>
-            {listedCount === 0 && (
+          {/* Five rows plus the list padding keeps the palette steady while
+              additional results remain available to scroll. */}
+          <CommandList className={anchored ? 'h-[208px]' : 'h-[248px]'}>
+            {displayedCount === 0 && (
               <div className="py-9 text-center text-sm text-muted-foreground">
                 No tabs or sites found.
               </div>
@@ -385,8 +530,36 @@ export function Omnibox({
               </CommandGroup>
             ))}
 
+            {recommendationRows.length > 0 && (
+              <CommandGroup>
+                {recommendationRows.map((row) => (
+                  <CommandItem
+                    key={row.key}
+                    value={`recommendation ${row.id} ${row.title} ${row.url}`}
+                    className={cn(!anchored && 'min-h-12 px-3')}
+                    onSelect={() => {
+                      close();
+                      if (row.dormant) openEntry(row.id);
+                      else activate(row.id);
+                    }}
+                  >
+                    {row.tab !== undefined ? (
+                      <RowFavicon tab={row.tab} />
+                    ) : (
+                      <StoredFavicon url={row.url} title={row.title} />
+                    )}
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {row.title}
+                    </span>
+                    <span className="ml-auto max-w-[40%] shrink-0 truncate text-[12px] font-medium text-black/40 group-data-[selected=true]:text-accent-foreground/85">
+                      {tabHost({ url: row.url, title: row.title })}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
           </CommandList>
-          )}
         </Command>
       </div>
     </ShellOverlay>
